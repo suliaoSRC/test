@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定案词条点选系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.tailwindcss.com?plugins=forms" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        neutral: '#64748B',
+                        yellow: {
+                            light: '#FEF3C7',
+                            DEFAULT: '#EAB308',
+                            dark: '#B45309'
+                        },
+                        // 新增蓝绿色系
+                        teal: {
+                            light: '#CCFBF1',
+                            DEFAULT: '#14B8A6',
+                            dark: '#0F766E'
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .btn-hover {
+                @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5;
+            }
+            .category-card {
+                @apply bg-white rounded-xl shadow-md p-3 mb-3 transition-all duration-300 hover:shadow-lg;
+            }
+            .column1-card {
+                @apply bg-white rounded-xl shadow-md p-2 mb-2 transition-all duration-300 hover:shadow-lg;
+            }
+            .selected-btn {
+                @apply bg-primary text-white border-primary;
+            }
+            .preset-btn {
+                @apply bg-blue-100 hover:bg-blue-200 text-primary py-2 px-4 rounded-lg font-medium btn-hover text-sm;
+            }
+            .yellow-preset-btn {
+                @apply bg-yellow-light hover:bg-yellow text-yellow-dark py-2 px-4 rounded-lg font-medium btn-hover text-sm;
+            }
+            /* 新增蓝绿色预设按钮样式 */
+            .teal-preset-btn {
+                @apply bg-teal-light hover:bg-teal text-teal-dark py-2 px-4 rounded-lg font-medium btn-hover text-sm;
+            }
+            .process-btn {
+                @apply px-3 py-2 border border-gray-300 rounded-lg text-sm hover:border-primary btn-hover transition-all duration-200;
+            }
+            /* 新增蓝绿色工序按钮样式 */
+            .teal-border-btn {
+                @apply px-3 py-2 border border-teal rounded-lg text-sm hover:border-teal-dark btn-hover transition-all duration-200 text-teal-dark;
+            }
+            .teal-border-btn.selected-btn {
+                @apply bg-teal text-white border-teal;
+            }
+            .dark-yellow-border-btn {
+                @apply px-3 py-2 border border-yellow-dark rounded-lg text-sm hover:border-yellow btn-hover transition-all duration-200;
+            }
+            .dark-yellow-border-btn.selected-btn {
+                @apply bg-yellow text-white border-yellow;
+            }
+            .adaptive-textarea {
+                @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none text-base;
+                min-height: 90px;
+                max-height: 400px;
+                line-height: 1.5;
+            }
+            .stain-btn {
+                @apply process-btn border-orange-200 text-orange-800 hover:border-orange-400;
+            }
+            .stain-btn.selected-btn {
+                @apply bg-orange-500 text-white border-orange-500;
+            }
+            /* 编辑区域高亮样式 */
+            .edited-highlight {
+                @apply bg-yellow-50 border border-yellow-200 animate-pulse;
+            }
+            /* 新增干转水/水转干按钮样式 */
+            .dry-wet-btn {
+                @apply px-3 py-2 border border-purple-300 rounded-lg text-sm hover:border-purple-500 btn-hover transition-all duration-200 text-purple-700;
+            }
+            .dry-wet-btn.selected-btn {
+                @apply bg-purple-500 text-white border-purple-500;
+            }
+            .wet-dry-btn {
+                @apply px-3 py-2 border border-blue-300 rounded-lg text-sm hover:border-blue-500 btn-hover transition-all duration-200 text-blue-700;
+            }
+            .wet-dry-btn.selected-btn {
+                @apply bg-blue-500 text-white border-blue-500;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter text-gray-800 min-h-screen">
+    <!-- 响应式容器 -->
+    <div class="container mx-auto px-4 py-5 max-w-[100%] lg:max-w-[95%] xl:max-w-[90%]">
+        <!-- 标题区域 -->
+        <header class="text-center mb-4">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800 mb-2">定案词条点选系统V0.58</h1>
+            <p class="text-neutral text-sm">蒸烫湿烫和衬衣的袖线西裤的裤线不用写了</p>
+            <!-- 新增超链接按钮 -->
+            <div class="mt-2">
+                <a href="https://pieijhlugl.aiforce.cloud/spark/faas/app_4jukz8hp8etxn" target="_blank" class="inline-flex items-center bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg font-medium btn-hover text-sm transition-all duration-300">
+                    <i class="fa fa-external-link mr-1"></i> 此页面已停止维护，新版页面点我
+                </a>
+            </div>
+        </header>
+        
+        <!-- 预设按钮区域 -->
+        <div class="mb-4 bg-white rounded-xl shadow-md p-3">
+            <h3 class="font-semibold mb-2 text-gray-700 text-sm">快速预设</h3>
+            <div class="flex flex-wrap gap-2">
+                <!-- 程序预设按钮 -->
+                <button class="preset-btn" data-preset="yangpiao60">60℃氧漂</button>
+                <button class="preset-btn" data-preset="yangpiao40">40℃氧漂</button>
+                <button class="preset-btn" data-preset="zhizun40">40℃至尊</button>
+                <button class="preset-btn" data-preset="zhizun30">30℃至尊</button>
+                <button class="preset-btn" data-preset="wuroushun30">30℃无柔顺</button>
+                <button class="preset-btn" data-preset="chongfengyi">冲锋衣</button>
+                <button class="preset-btn" data-preset="kuaixi">快洗</button>
+                
+                <!-- 黄色系预设按钮 -->
+                <button class="yellow-preset-btn" data-preset="silvyixi">四氯乙烯</button>
+                <button class="yellow-preset-btn" data-preset="xiku">西裤</button>
+                <button class="yellow-preset-btn" data-preset="ganxiqian">干洗前去渍</button>
+                <button class="yellow-preset-btn" data-preset="ganxiqianfan">干洗前去渍翻面</button>
+                <button class="yellow-preset-btn" data-preset="tanqing">碳氢</button>
+                <button class="yellow-preset-btn" data-preset="guiji">硅基</button>
+                
+                <!-- 蓝绿色系羽绒预设按钮 -->
+                <button class="teal-preset-btn" data-preset="yu40">羽绒40</button>
+                <button class="teal-preset-btn" data-preset="yu40-pao">羽绒40浸泡</button>
+                <button class="teal-preset-btn" data-preset="yu30">羽绒30</button>
+                <button class="teal-preset-btn" data-preset="yu-shi">羽绒湿洗</button>
+                <button class="preset-btn" data-preset="dabo60">达播氧漂</button>
+                
+                <!-- 快速文本预设按钮 -->
+                <button class="preset-btn" data-quick-text="zhujiang-workwear">珠江工衣</button>
+                <button class="preset-btn" data-quick-text="yellow-tablecloth">黄色台布</button>
+                <button class="preset-btn" data-quick-text="yujin">2C浴巾</button>
+                <button class="preset-btn" data-preset="bucaoB">布草被套常规</button>
+                <button class="preset-btn" data-preset="bucaoC">布草床单常规</button>
+                <button class="preset-btn" data-preset="bucaoZ">布草枕套常规</button>
+                <button class="preset-btn" data-preset="bucaoyangB">布草被套氧漂</button>
+                <button class="preset-btn" data-preset="bucaoyangC">布草床单氧漂</button>
+                <button class="preset-btn" data-preset="bucaoyangZ">布草枕套氧漂</button>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- 左侧第一列：洗前保护、预去渍、部位、柔顺 -->
+            <div class="lg:col-span-4 space-y-2"></div>
+            
+            <!-- 左侧第二列：洗涤、干燥、熨烫 -->
+            <div class="lg:col-span-4 space-y-2"></div>
+            
+            <!-- 右侧：结果和复制区 -->
+            <div class="lg:col-span-4">
+                <div class="category-card sticky top-4 p-3 max-w-[1400px]">
+                    <h2 class="text-base font-semibold mb-2 flex items-center text-gray-700">
+                        <i class="fa fa-list-alt text-primary mr-2"></i>生成结果（可编辑）
+                    </h2>
+                    
+                    <div class="mb-2">
+                        <textarea id="resultText" class="adaptive-textarea" placeholder="选择工序后显示文字，您可以直接在此编辑..."></textarea>
+                        <div class="text-right text-xs text-neutral mt-0.5">
+                            <span id="charCount">0</span> 字符
+                            <!-- 编辑提示 -->
+                            <span id="editTip" class="ml-2 hidden text-orange-600">
+                                <i class="fa fa-info-circle mr-0.5"></i>点选新工序将重置编辑内容
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 mb-2">
+                        <button id="copyBtn" class="flex-1 bg-primary hover:bg-primary/90 text-white py-2 px-3 rounded-lg font-medium btn-hover flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa fa-copy mr-1"></i> 复制
+                        </button>
+                        <button id="clearBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 rounded-lg font-medium btn-hover flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa fa-trash mr-1"></i> 清空
+                        </button>
+                    </div>
+                    
+                    <!-- 新增主体/内胆选择按钮 -->
+                    <div class="flex gap-2 mb-2">
+                        <button id="mainBodyBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg font-medium btn-hover flex items-center justify-center text-sm transition-all duration-200">
+                            <i class="fa fa-square-o mr-1"></i> 主体
+                        </button>
+                        <button id="innerLiningBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg font-medium btn-hover flex items-center justify-center text-sm transition-all duration-200">
+                            <i class="fa fa-square-o mr-1"></i> 内胆
+                        </button>
+                    </div>
+
+                    <!-- 新增干转水区域 -->
+                    <div class="mb-2">
+                        <h3 class="text-sm font-semibold mb-2 flex items-center text-purple-700">
+                            <i class="fa fa-exchange text-purple-600 mr-1"></i>干转水
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="dry-wet-btn" data-dry-wet="大面积/分散性色渍">大面积/分散性色渍</button>
+                            <button class="dry-wet-btn" data-dry-wet="氨纶过高">氨纶过高</button>
+                            <button class="dry-wet-btn" data-dry-wet="溶剂掉色">溶剂掉色</button>
+                            <button class="dry-wet-btn" data-dry-wet="涂层">涂层</button>
+                            <button class="dry-wet-btn" data-dry-wet="开胶">开胶</button>
+                            <button class="dry-wet-btn" data-dry-wet="起泡">起泡</button>
+                        </div>
+                    </div>
+
+                    <!-- 新增水转干区域 -->
+                    <div class="mb-2">
+                        <h3 class="text-sm font-semibold mb-2 flex items-center text-blue-700">
+                            <i class="fa fa-exchange text-blue-600 mr-1"></i>水转干
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="wet-dry-btn" data-wet-dry="保质保型">保质保型</button>
+                            <button class="wet-dry-btn" data-wet-dry="洗衣液掉色">洗衣液掉色</button>
+                        </div>
+                    </div>
+                    
+                    <div id="copyMessage" class="hidden mt-1.5 p-1.5 rounded-lg text-center text-xs font-medium"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="mt-6 text-center text-neutral text-xs">
+            <p>宋若辰开发，若有使用意见或建议请联系我</p>
+        </footer>
+    </div>
+
+    <script>
+        // 工序数据结构
+        const processes = [
+            {
+                category: "洗前保护",
+                items: [
+                    { value: "尺寸测量", fullName: "尺寸测量" },
+                    { value: "翻面", fullName: "翻面" },
+                    { value: "粗网袋", fullName: "装粗网袋" },
+                    { value: "细网袋", fullName: "装细网袋" },
+                    { value: "保护纽扣", fullName: "保护纽扣" },
+                    { value: "保护拉绳", fullName: "保护拉绳头" },
+                    { value: "保护拉链", fullName: "包裹拉链头" },
+                    { value: "拉好拉链", fullName: "拉好拉链" },
+                    { value: "绑紧", fullName: "绑紧" },
+                    { value: "拆毛领", fullName: "拆卸毛领" },
+                    { value: "拆皮饰", fullName: "拆卸皮饰" },
+                    { value: "魔术贴", fullName: "贴好魔术贴" },
+                    { value: "进机前包裹纽扣", fullName: "进机前包裹纽扣" },
+                    { value: "防水测试", fullName: "防水性能测试",specialStyle: "teal-border"}
+                ]
+            },
+            {
+                category: "预去渍",
+                items: [
+                    { value: "去中/重度发黄/色渍", fullName: "喷涂剂【】（发黄/色渍），放置2h" },
+                    { value: "去中/重度发黄/色渍-白", fullName: "喷涂剂【】（发黄/色渍），放置2h，使用高温蒸汽刷对残留色渍部位进行高温去渍" },
+                    { value: "去轻度发黄/色渍", fullName: "喷涂剂【】（发黄/色渍），放置1h" },
+                    { value: "去黑渍", fullName: "皂液涂【黑渍】" },
+                    { value: "去无色油渍", fullName: "神器涂【无色油渍】" },
+                    { value: "去有色油渍", fullName: "1号去渍剂涂【有色油渍】，放置30min后，神器涂【有色油渍】，使用喷涂剂喷涂残留色渍部位，放置2h" },
+                    { value: "去血渍", fullName: "去血渍剂2号涂【血渍】，放置30min" },
+                    { value: "去轻度笔墨渍", fullName: "神器涂【笔渍】" },
+                    { value: "去中度笔墨渍", fullName: "1号去渍剂涂【笔渍】，放置30min后，神器涂【笔渍】" },
+                    { value: "去重度笔墨渍", fullName: "1号去渍剂涂【笔渍】，放置30min后，神器+去笔渍剂涂【笔渍】" },
+                    { value: "去锈渍", fullName: "除锈剂涂【锈渍】，放置3min" },
+                    { value: "去染色渍", fullName: "彩加衣稀释液浸泡6h" },
+                    { value: "去白渍", fullName: "神器涂【白渍】" },
+                    { value: "去重度化妆品渍", fullName: "1号去渍剂涂【重度化妆品渍】，放置30min后，神器涂【重度化妆品渍】，使用喷涂剂喷涂残留色渍部位，放置2h" },
+                    { value: "去轻/中度化妆品渍", fullName: "神器涂【化妆品渍】" },
+                    { value: "至尊浸泡", fullName: "至尊稀释液整体浸泡【15min】" },
+                    { value: "避涂层", fullName: "避开涂层图案" },
+                    { value: "避深色", fullName: "避开深色部位" },
+                    { value: "刷整体", fullName: "至尊稀释液整体刷洗" },
+                    { value: "刷局部", fullName: "至尊稀释液刷洗污渍处" },
+                    { value: "揉搓", fullName: "揉搓污渍处" },
+                    { value: "1号去渍剂试色", fullName: "1号去渍剂试色" },
+                    { value: "喷涂剂试色", fullName: "喷涂剂试色" },
+                    { value: "神器试色", fullName: "神器试色" },
+                    { value: "干洗前去渍", fullName: "干洗前去渍", specialStyle: "dark-yellow-border" }
+                ]
+            },
+            {
+                category: "预去渍填充服",
+                items: [
+                    { value: "1号预涂", fullName: "1号预涂液整体涂，放置1h", specialStyle: "teal-border" },
+                ]
+            },
+            {
+                category: "部位",
+                items: [
+                    { value: "整体喷", fullName: "整体喷", isStain: true },
+                    { value: "局部喷", fullName: "局部喷", isStain: true },
+                    { value: "浸脱", fullName: "浸脱", isStain: true },
+                    { value: "整体涂", fullName: "浸脱", isStain: true },
+                    { value: "局部图", fullName: "浸脱", isStain: true }
+                ]
+            },
+            {
+                category: "洗涤",
+                items: [
+                    { value: "60℃氧漂", fullName: "工业水洗机4号程序", isExclusive: true },
+                    { value: "40℃至尊", fullName: "（40℃至尊）工业水洗机13号程序", isExclusive: true },
+                    { value: "40℃氧漂", fullName: "（40℃氧漂）工业水洗机14号程序", isExclusive: true },
+                    { value: "30℃至尊", fullName: "工业水洗机10号程序", isExclusive: true },
+                    { value: "9#", fullName: "工业水洗机9号程序", isExclusive: true },
+                    { value: "快洗", fullName: "家用机快洗程序", isExclusive: true },
+                    { value: "快洗P3", fullName: "家用机快洗程序(P-3)", isExclusive: true },
+                    { value: "60氧漂-强", fullName: "60氧漂洗-加强", isExclusive: true },
+                    { value: "家用羽绒40", fullName: "家用机羽绒服40℃程序", isExclusive: true, specialStyle: "teal-border" },
+                    { value: "家用羽绒30", fullName: "家用机羽绒服30℃程序", isExclusive: true, specialStyle: "teal-border" },
+                    { value: "40羽绒", fullName: "工业水洗机3号程序（羽绒服40℃）", isExclusive: true, specialStyle: "teal-border" },
+                    { value: "30羽绒",  fullName: "工业水洗机16号程序", isExclusive: true, specialStyle: "teal-border"  },
+                    { value: "30羽绒-测试",  fullName: "工业水洗机15号程序", isExclusive: true, specialStyle: "teal-border"  },
+                    { value: "湿洗羽绒",  fullName: "伊莱克斯湿洗机-羽绒服柔和*", isExclusive: true, specialStyle: "teal-border"  },
+                    { value: "羽绒浸泡",  fullName: "工业水洗机2号程序（15kg）", isExclusive: true, specialStyle: "teal-border"  },
+                    { value: "湿洗3号", fullName: "伊莱克斯湿洗机-真丝套件程序洗涤", isExclusive: true },
+                    { value: "湿洗5号", fullName: "伊莱克斯湿洗机5号程序（蚕丝芯）", isExclusive: true },
+                    { value: "四氯乙烯", fullName: "四氯乙烯1号程序", specialStyle: "dark-yellow-border", isExclusive: true },
+                    { value: "四氯快洗", fullName: "四氯乙烯单机快洗", specialStyle: "dark-yellow-border", isExclusive: true },
+                    { value: "碳氢", fullName: "碳氢1号程序", specialStyle: "dark-yellow-border", isExclusive: true },
+                    { value: "硅基", fullName: "硅基1号程序", specialStyle: "dark-yellow-border", isExclusive: true },
+                    { value: "布草常规18", fullName: "工业水洗机18号程序", isExclusive: true },
+                    { value: "化纤芯柔19", fullName: "工业水洗机19号程序", isExclusive: true },
+                    { value: "窗帘漂洗20", fullName: "工业水洗机20号程序", isExclusive: true },
+                    { value: "窗帘常规21", fullName: "工业水洗机21号程序", isExclusive: true },
+                    { value: "窗纱常规22", fullName: "工业水洗机22号程序", isExclusive: true },
+                    { value: "窗帘氧漂23", fullName: "工业水洗机23号程序", isExclusive: true },
+                    { value: "窗纱氧漂24", fullName: "工业水洗机24号程序", isExclusive: true },                    
+                    { value: "褪色单机洗", fullName: "褪色注意单独洗" },
+                    { value: "凑机", fullName: "【凑机】" , specialStyle: "teal-border" },
+                    { value: "测试", fullName: "工艺测试" },
+                    { value: "配件手洗", fullName: "配件手洗",specialStyle: "teal-border" }
+                ]
+            },
+            {
+                category: "柔顺",
+                items: [
+                    { value: "薰衣草", fullName: "薰衣草柔顺剂", isExclusive: true },
+                    { value: "白茶香", fullName: "白茶香柔顺剂", isExclusive: true },
+                    { value: "橙花香", fullName: "橙花香柔顺剂", isExclusive: true }
+                ]
+            },
+            {
+                category: "干燥",
+                items: [
+                    { value: "翻", fullName: "翻面" },
+                    { value: "烘房悬挂", fullName: "烘房悬挂" },
+                    { value: "烘房平铺", fullName: "烘房平铺" },
+                    { value: "室温悬挂", fullName: "室温悬挂" },
+                    { value: "室温平铺", fullName: "室温平铺" },
+                    { value: "人像机干", fullName: "人像机干燥" },
+                    { value: "吹裤机干燥", fullName: "吹裤机干燥" },
+                    { value: "烘干1#", fullName: "烘干机1号程序" },
+                    { value: "烘干3#", fullName: "烘干机3号程序" },                    
+                    { value: "烘干7#", fullName: "烘干机7号程序" },
+                    { value: "烘干8#", fullName: "烘干机8号程序" },
+                    { value: "烘干9#", fullName: "烘干机9号程序" },                    
+                    { value: "羽绒3→1", fullName: "烘干机3号程序→烘干机1号程序反烘，如有皱褶蒸烫" },
+                    { value: "羽绒3→10测", fullName: "【测试】烘干机3号程序→烘干机10号程序反烘，如有皱褶蒸烫" },
+                    { value: "挂→烘2", fullName: "烘房开启悬挂2h→烘干机2号程序" },
+                    { value: "压胶/整体涂层：人像→挂→6", fullName: "人像机吹干15min→烘房悬挂→滚筒6号程序拍打，如有皱褶蒸烫" },
+                    { value: "局部涂层：羽绒1→挂→6", fullName: "烘干机1号程序→烘房悬挂→烘干机6号程序反烘，如有皱褶蒸烫" }
+                ]
+            },
+            {
+                category: "熨烫",
+                items: [
+                    { value: "蒸烫", fullName: "蒸烫" },
+                    { value: "湿烫", fullName: "湿烫" },
+                    { value: "袖线", fullName: "烫袖线" },
+                    { value: "裤线", fullName: "烫裤线" },
+                    { value: "压烫", fullName: "压烫" },
+                    { value: "避涂层", fullName: "避开涂层图案" }
+                ]
+            }
+        ];
+
+        // 存储每个工序类别的内容标识，用于后续替换
+        const categoryIdentifiers = {
+            "洗前保护": "洗前保护内容",
+            "预去渍": "预去渍内容",
+            "预去渍填充服": "预去渍填充服内容",
+            "部位": "部位内容",
+            "洗涤": "洗涤内容",
+            "柔顺": "柔顺内容",
+            "干燥": "干燥内容",
+            "熨烫": "熨烫内容"
+        };
+
+        // 程序预设方案
+        const presets = {
+            "yangpiao60": ["60℃氧漂"],
+            "yangpiao40": ["40℃氧漂"],
+            "zhizun40": ["40℃至尊"],
+            "zhizun30": ["30℃至尊", "烘房悬挂"],
+            "wuroushun30": ["9#", "烘房悬挂"], 
+            "chongfengyi": ["翻面","9#", "烘房悬挂"],
+            "kuaixi": ["快洗", "薰衣草","烘房悬挂"],
+            "silvyixi": ["四氯乙烯"],
+            "xiku": ["翻面", "四氯乙烯"],
+            "ganxiqian": ["干洗前去渍","四氯乙烯"],
+            "ganxiqianfan": ["干洗前去渍","翻面","四氯乙烯"],
+            "tanqing": ["水溶性污渍", "翻面", "细网袋", "碳氢"],
+            "guiji": ["细网袋", "硅基"],
+            "dabo60": ["60℃氧漂", "烘干1#"],
+            "yu40-pao": ["保护拉绳", "保护拉链", "羽绒浸泡","翻","烘干3#"],
+            "yu40": ["保护拉绳", "保护拉链", "40羽绒","翻","烘干3#"],
+            "yu30": ["保护拉绳", "保护拉链", "30羽绒-测试","翻","挂→烘2"],
+            "yu-shi": ["保护拉绳", "保护拉链", "湿洗羽绒","翻","室温悬挂"],            
+            "bucaoB": ["布草常规18","烘干7#"],
+            "bucaoC": ["布草常规18","烘干8#"],
+            "bucaoZ": ["布草常规18","烘干9#"],
+            "bucaoyangB": ["60℃氧漂", "烘干7#"],
+            "bucaoyangC": ["60℃氧漂", "烘干8#"],
+            "bucaoyangZ": ["60℃氧漂", "烘干9#"]
+        };
+
+        // 快速文本预设
+        const quickTexts = {
+            "zhujiang-workwear": "工业水洗机12号程序（注：不可用⑦号工业机），烘干机1号程序，蒸烫",
+            "yellow-tablecloth": "工业水洗机4号程序。烘干机1号程序，单滚熨烫+熨烫台修褶皱",
+            "yujin": "洗前测量蓬松度和尺寸。神器涂黄渍部位，放置5分钟，搓洗，用2升60度的热水+1包蓝色月光色渍净+1泵除菌去味至尊整体浸泡1小时。使用标准洗（漂洗次数4次）+1/4瓶盖薰衣草香柔顺剂。 滚筒烘干机5号程序干燥（60度热风40分钟+5分钟冷风） 按需修饰钱头、毛球等。绒面夹机蒸烫(蒸烫过程嗅闻检查有无异味或洗涤剂残留味道，如有联系产线长处理）熨烫后放烘房悬挂散潮30分钟（散潮时间不低于10分钟）复核蓬松度后终检 终检后平铺包装桌面1小时（平铺放置时间不低于1小时） 折叠包装出库"
+        };
+
+        // 选中项存储
+        const selectedItems = {};
+        processes.forEach(process => selectedItems[process.category] = []);
+
+        // 存储每个工序类别的内容
+        const categoryContents = {};
+        processes.forEach(process => categoryContents[process.category] = "");
+
+        // 存储干转水和水转干的选中项
+        let selectedDryWetItems = [];
+        let selectedWetDryItems = [];
+
+        // DOM元素
+        const column1 = document.querySelector('.lg\\:col-span-4:first-of-type');
+        const column2 = document.querySelector('.lg\\:col-span-4:nth-of-type(2)');
+        const resultText = document.getElementById('resultText');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyMessage = document.getElementById('copyMessage');
+        const charCount = document.getElementById('charCount');
+        const editTip = document.getElementById('editTip');
+        const mainBodyBtn = document.getElementById('mainBodyBtn');
+        const innerLiningBtn = document.getElementById('innerLiningBtn');
+        
+        // 存储当前选择的前缀类型
+        let currentPrefix = '';
+
+        // 初始化
+        init();
+
+        function init() {
+            renderProcessButtons();
+            updateResult();
+            bindEvents();
+            adjustTextareaHeight();
+        }
+
+        // 渲染工序按钮
+        function renderProcessButtons() {
+            // 定义两列分别包含的分类
+            const column1Categories = ["洗前保护", "预去渍","预去渍填充服", "部位", "柔顺"];
+            const column2Categories = ["洗涤", "干燥", "熨烫"];
+
+            processes.forEach((process) => {
+                const card = document.createElement('div');
+                // 为第一列卡片应用特殊样式
+                if (column1Categories.includes(process.category)) {
+                    card.className = 'column1-card';
+                } else {
+                    card.className = 'category-card';
+                }
+                card.dataset.category = process.category;
+
+                // 工序标题 - 第一列标题文字更小
+                const title = document.createElement('h3');
+                if (column1Categories.includes(process.category)) {
+                    title.className = 'text-sm font-semibold mb-1.5 text-gray-800';
+                } else {
+                    title.className = 'text-base font-semibold mb-2 text-gray-800';
+                }
+                title.textContent = process.category;
+                card.appendChild(title);
+
+                const btnContainer = document.createElement('div');
+                btnContainer.className = 'flex flex-wrap gap-2';
+
+                process.items.forEach(item => {
+                    const btn = document.createElement('button');
+                    
+                    // 应用特殊样式
+                    if (item.specialStyle === "dark-yellow-border") {
+                        btn.className = 'dark-yellow-border-btn';
+                    } else if (item.specialStyle === "teal-border") {
+                        btn.className = 'teal-border-btn';
+                    } else if (item.isStain) {
+                        btn.className = 'stain-btn';
+                    } else {
+                        btn.className = 'process-btn';
+                    }
+                    
+                    btn.textContent = item.value;
+                    btn.dataset.value = item.value;
+                    btn.dataset.category = process.category;
+                    btn.dataset.isStain = item.isStain ? 'true' : 'false';
+                    btn.dataset.specialStyle = item.specialStyle || '';
+                    btn.dataset.isExclusive = item.isExclusive ? 'true' : 'false';
+
+                    btn.addEventListener('click', () => toggleSelect(process.category, item.value, btn));
+                    btnContainer.appendChild(btn);
+                });
+
+                card.appendChild(btnContainer);
+                
+                // 根据分类将卡片添加到对应的列
+                if (column1Categories.includes(process.category)) {
+                    column1.appendChild(card);
+                } else if (column2Categories.includes(process.category)) {
+                    column2.appendChild(card);
+                }
+            });
+        }
+
+        // 切换选择状态
+        function toggleSelect(category, value, btn) {
+            // 检查是否有编辑内容
+            const hasEditedContent = resultText.dataset.userEdited === 'true' && resultText.value.trim() !== '';
+            
+            // 处理互斥选项（洗涤和柔顺剂）
+            if ((category === "洗涤" || category === "柔顺") && btn.dataset.isExclusive === "true") {
+                // 取消该分类下所有其他互斥项的选择状态
+                const allButtons = document.querySelectorAll(`button[data-category="${category}"][data-is-exclusive="true"]`);
+                allButtons.forEach(button => {
+                    if (button.dataset.value !== value) {
+                        const idx = selectedItems[category].indexOf(button.dataset.value);
+                        if (idx !== -1) {
+                            selectedItems[category].splice(idx, 1);
+                        }
+                        button.classList.remove('selected-btn');
+                    }
+                });
+                
+                // 处理当前按钮的选择状态
+                const idx = selectedItems[category].indexOf(value);
+                if (idx === -1) {
+                    selectedItems[category].push(value);
+                    btn.classList.add('selected-btn');
+                    btn.classList.add('scale-105');
+                    setTimeout(() => btn.classList.remove('scale-105'), 300);
+                } else {
+                    selectedItems[category].splice(idx, 1);
+                    btn.classList.remove('selected-btn');
+                }
+            } else {
+                // 其他分类和非互斥项使用普通多选逻辑
+                const idx = selectedItems[category].indexOf(value);
+                if (idx === -1) {
+                    selectedItems[category].push(value);
+                    if (btn.dataset.specialStyle === "dark-yellow-border") {
+                        btn.classList.add('selected-btn');
+                    } else if (btn.dataset.specialStyle === "teal-border") {
+                        btn.classList.add('selected-btn');
+                    } else {
+                        btn.classList.add('selected-btn');
+                    }
+                    btn.classList.add('scale-105');
+                    setTimeout(() => btn.classList.remove('scale-105'), 300);
+                } else {
+                    selectedItems[category].splice(idx, 1);
+                    btn.classList.remove('selected-btn');
+                }
+            }
+            
+            // 如果有编辑内容，显示提示并重置编辑状态
+            if (hasEditedContent) {
+                // 显示编辑提示
+                editTip.classList.remove('hidden');
+                // 高亮文本框提示用户内容将被重置
+                resultText.classList.add('edited-highlight');
+                // 2秒后移除高亮
+                setTimeout(() => {
+                    resultText.classList.remove('edited-highlight');
+                }, 2000);
+            }
+            
+            delete resultText.dataset.quickText;
+            // 重置编辑状态，使用新的工序顺序生成内容
+            delete resultText.dataset.userEdited;
+            updateResult();
+        }
+
+        // 切换干转水选择状态
+        function toggleDryWetSelect(value, btn) {
+            const idx = selectedDryWetItems.indexOf(value);
+            if (idx === -1) {
+                selectedDryWetItems.push(value);
+                btn.classList.add('selected-btn');
+                btn.classList.add('scale-105');
+                setTimeout(() => btn.classList.remove('scale-105'), 300);
+            } else {
+                selectedDryWetItems.splice(idx, 1);
+                btn.classList.remove('selected-btn');
+            }
+            
+            // 更新结果文本
+            updateResult();
+        }
+
+        // 切换水转干选择状态
+        function toggleWetDrySelect(value, btn) {
+            const idx = selectedWetDryItems.indexOf(value);
+            if (idx === -1) {
+                selectedWetDryItems.push(value);
+                btn.classList.add('selected-btn');
+                btn.classList.add('scale-105');
+                setTimeout(() => btn.classList.remove('scale-105'), 300);
+            } else {
+                selectedWetDryItems.splice(idx, 1);
+                btn.classList.remove('selected-btn');
+            }
+            
+            // 更新结果文本
+            updateResult();
+        }
+
+        // 应用程序预设
+        function applyPreset(presetKey) {
+            clearAll();
+            delete resultText.dataset.userEdited;
+            delete resultText.dataset.quickText;
+            
+            presets[presetKey].forEach(value => {
+                processes.forEach(process => {
+                    const item = process.items.find(i => i.value === value);
+                    if (item) {
+                        selectedItems[process.category].push(value);
+                        const btn = document.querySelector(`button[data-category="${process.category}"][data-value="${value}"]`);
+                        btn && btn.classList.add('selected-btn');
+                    }
+                });
+            });
+            
+            // 显示提示
+            editTip.classList.remove('hidden');
+            resultText.classList.add('edited-highlight');
+            setTimeout(() => {
+                resultText.classList.remove('edited-highlight');
+            }, 2000);
+            
+            updateResult();
+        }
+
+        // 应用快速文本预设
+        function applyQuickText(textKey) {
+            clearAll();
+            delete resultText.dataset.userEdited;
+            resultText.dataset.quickText = textKey;
+            resultText.value = quickTexts[textKey] || '';
+            charCount.textContent = resultText.value.length;
+            adjustTextareaHeight();
+            const hasContent = resultText.value.length > 0;
+            copyBtn.disabled = !hasContent;
+            clearBtn.disabled = !hasContent;
+            
+            // 显示提示
+            editTip.classList.remove('hidden');
+            resultText.classList.add('edited-highlight');
+            setTimeout(() => {
+                resultText.classList.remove('edited-highlight');
+            }, 2000);
+        }
+
+        // 重置前缀选择状态（主体/内胆）
+        function resetPrefixSelection() {
+            currentPrefix = '';
+            // 重置主体按钮样式
+            mainBodyBtn.classList.remove('bg-primary', 'text-white');
+            mainBodyBtn.classList.add('bg-gray-100', 'text-gray-700');
+            mainBodyBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 主体';
+            
+            // 重置内胆按钮样式
+            innerLiningBtn.classList.remove('bg-primary', 'text-white');
+            innerLiningBtn.classList.add('bg-gray-100', 'text-gray-700');
+            innerLiningBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 内胆';
+        }
+
+        // 清空所有选择
+        function clearAll() {
+            processes.forEach(process => {
+                selectedItems[process.category] = [];
+                categoryContents[process.category] = "";
+                const buttons = document.querySelectorAll(`button[data-category="${process.category}"]`);
+                buttons.forEach(button => button.classList.remove('selected-btn'));
+            });
+            
+            // 清空干转水和水转干选择
+            selectedDryWetItems = [];
+            selectedWetDryItems = [];
+            document.querySelectorAll('.dry-wet-btn, .wet-dry-btn').forEach(btn => {
+                btn.classList.remove('selected-btn');
+            });
+            
+            // 重置主体/内胆选择状态
+            resetPrefixSelection();
+            
+            updateResult();
+        }
+
+        // 调整文本框高度
+        function adjustTextareaHeight() {
+            const scrollTop = resultText.scrollTop;
+            resultText.style.height = 'auto';
+            
+            const computedStyle = getComputedStyle(resultText);
+            const paddingTop = parseFloat(computedStyle.paddingTop);
+            const paddingBottom = parseFloat(computedStyle.paddingBottom);
+            const lineHeight = parseFloat(computedStyle.lineHeight);
+            
+            let contentHeight = resultText.scrollHeight - paddingTop - paddingBottom;
+            contentHeight = Math.ceil(contentHeight * 1.1);
+            
+            const minHeight = 90;
+            const maxHeight = 400;
+            
+            let finalHeight;
+            if (contentHeight <= minHeight) {
+                finalHeight = minHeight;
+                resultText.style.overflowY = 'hidden';
+            } else if (contentHeight > maxHeight) {
+                finalHeight = maxHeight;
+                resultText.style.overflowY = 'auto';
+            } else {
+                finalHeight = Math.ceil(contentHeight / lineHeight) * lineHeight;
+                resultText.style.overflowY = 'hidden';
+            }
+            
+            resultText.style.height = `${finalHeight}px`;
+            if (scrollTop > 0) {
+                resultText.scrollTop = scrollTop;
+            }
+        }
+
+        // 更新结果文本 - 修改核心逻辑：将配件手洗提取到文本末尾
+        function updateResult() {
+            if (resultText.dataset.quickText) return;
+            
+            // 按类别收集内容（严格按照工序顺序）
+            const categoryOrder = ["洗前保护", "预去渍","预去渍填充服", "洗涤", "柔顺", "干燥", "熨烫"];
+            let hasStains = false;
+            
+            // 1. 先处理部位（污渍）- 只用于填充占位符，不单独显示
+            const stains = [];
+            selectedItems["部位"].forEach(selectedValue => {
+                const item = processes.find(p => p.category === "部位").items.find(i => i.value === selectedValue);
+                if (item) {
+                    stains.push(item.fullName);
+                }
+            });
+            hasStains = stains.length > 0;
+            
+            // 2. 处理其他类别（严格按顺序），并提取配件手洗
+            let peijianShouxi = ""; // 存储配件手洗内容
+            categoryOrder.forEach(category => {
+                const items = [];
+                selectedItems[category].forEach(selectedValue => {
+                    const item = processes.find(p => p.category === category).items.find(i => i.value === selectedValue);
+                    if (item) {
+                        let fullName = item.fullName;
+                        
+                        // 处理污渍占位符
+                        if (hasStains && fullName.includes("【】") && stains.length > 0) {
+                            fullName = fullName.replace("【】", `【${stains.join('、')}】`);
+                        }
+                        
+                        // 如果是配件手洗，单独存储，不加入当前类别
+                        if (selectedValue === "配件手洗") {
+                            peijianShouxi = fullName;
+                        } else {
+                            items.push(fullName);
+                        }
+                    }
+                });
+                categoryContents[category] = items.join('，');
+            });
+            
+            // 3. 生成完整内容字符串（严格按工序顺序，不包含部位类别）
+            let fullContent = [];
+            categoryOrder.forEach(category => {
+                if (categoryContents[category]) {
+                    fullContent.push(categoryContents[category]);
+                }
+            });
+            let newContent = fullContent.join('，');
+            
+            // 4. 将配件手洗添加到文本最后
+            if (peijianShouxi) {
+                newContent = newContent ? `${newContent}，${peijianShouxi}` : peijianShouxi;
+            }
+            
+            // 5. 添加干转水内容
+            if (selectedDryWetItems.length > 0) {
+                const dryWetContent = `干转水：${selectedDryWetItems.join('、')}`;
+                newContent = newContent ? `${newContent}，${dryWetContent}` : dryWetContent;
+            }
+            
+            // 6. 添加水转干内容
+            if (selectedWetDryItems.length > 0) {
+                const wetDryContent = `水转干：${selectedWetDryItems.join('、')}`;
+                newContent = newContent ? `${newContent}，${wetDryContent}` : wetDryContent;
+            }
+            
+            // 7. 添加前缀（主体/内胆）
+            if (currentPrefix && newContent) {
+                newContent = `${currentPrefix}：${newContent}`;
+            }
+            
+            // 无论是否有编辑，都按新的工序顺序重新生成内容
+            resultText.value = newContent;
+            
+            // 更新状态
+            charCount.textContent = resultText.value.length;
+            adjustTextareaHeight();
+            const hasContent = resultText.value.length > 0;
+            copyBtn.disabled = !hasContent;
+            clearBtn.disabled = !hasContent;
+            
+            // 如果有内容且之前有编辑，3秒后隐藏提示
+            if (hasContent) {
+                setTimeout(() => {
+                    editTip.classList.add('hidden');
+                }, 3000);
+            } else {
+                editTip.classList.add('hidden');
+            }
+        }
+
+        // 绑定前缀按钮事件
+        function bindPrefixButtons() {
+            mainBodyBtn.addEventListener('click', () => {
+                // 切换主体按钮状态
+                if (currentPrefix === '主体') {
+                    // 如果已选中主体，则取消选择
+                    currentPrefix = '';
+                    mainBodyBtn.classList.remove('bg-primary', 'text-white');
+                    mainBodyBtn.classList.add('bg-gray-100', 'text-gray-700');
+                    mainBodyBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 主体';
+                } else {
+                    // 选择主体，取消内胆选择
+                    currentPrefix = '主体';
+                    mainBodyBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                    mainBodyBtn.classList.add('bg-primary', 'text-white');
+                    mainBodyBtn.innerHTML = '<i class="fa fa-check-square-o mr-1"></i> 主体';
+                    
+                    // 取消内胆选择
+                    innerLiningBtn.classList.remove('bg-primary', 'text-white');
+                    innerLiningBtn.classList.add('bg-gray-100', 'text-gray-700');
+                    innerLiningBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 内胆';
+                }
+                updateResult();
+            });
+            
+            innerLiningBtn.addEventListener('click', () => {
+                // 切换内胆按钮状态
+                if (currentPrefix === '内胆') {
+                    // 如果已选中内胆，则取消选择
+                    currentPrefix = '';
+                    innerLiningBtn.classList.remove('bg-primary', 'text-white');
+                    innerLiningBtn.classList.add('bg-gray-100', 'text-gray-700');
+                    innerLiningBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 内胆';
+                } else {
+                    // 选择内胆，取消主体选择
+                    currentPrefix = '内胆';
+                    innerLiningBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                    innerLiningBtn.classList.add('bg-primary', 'text-white');
+                    innerLiningBtn.innerHTML = '<i class="fa fa-check-square-o mr-1"></i> 内胆';
+                    
+                    // 取消主体选择
+                    mainBodyBtn.classList.remove('bg-primary', 'text-white');
+                    mainBodyBtn.classList.add('bg-gray-100', 'text-gray-700');
+                    mainBodyBtn.innerHTML = '<i class="fa fa-square-o mr-1"></i> 主体';
+                }
+                updateResult();
+            });
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 复制按钮
+            copyBtn.addEventListener('click', () => {
+                resultText.select();
+                document.execCommand('copy');
+                copyMessage.textContent = '复制成功！';
+                copyMessage.className = 'mt-1.5 p-1.5 rounded-lg text-center text-xs font-medium bg-green-100 text-green-800';
+                setTimeout(() => {
+                    copyMessage.className = 'hidden mt-1.5 p-1.5 rounded-lg text-center text-xs font-medium';
+                }, 1500);
+            });
+
+            // 清空按钮
+            clearBtn.addEventListener('click', () => {
+                clearAll();
+                delete resultText.dataset.userEdited;
+                delete resultText.dataset.quickText;
+                resultText.value = '';
+                editTip.classList.add('hidden');
+                adjustTextareaHeight();
+            });
+
+            // 预设按钮事件
+            document.querySelectorAll('.preset-btn[data-preset], .yellow-preset-btn[data-preset], .teal-preset-btn[data-preset]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyPreset(btn.dataset.preset);
+                });
+            });
+
+            document.querySelectorAll('.preset-btn[data-quick-text]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyQuickText(btn.dataset.quickText);
+                });
+            });
+
+            // 干转水按钮事件
+            document.querySelectorAll('.dry-wet-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toggleDryWetSelect(btn.dataset.dryWet, btn);
+                });
+            });
+
+            // 水转干按钮事件
+            document.querySelectorAll('.wet-dry-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toggleWetDrySelect(btn.dataset.wetDry, btn);
+                });
+            });
+
+            // 文本框编辑事件
+            resultText.addEventListener('input', () => {
+                resultText.dataset.userEdited = 'true';
+                charCount.textContent = resultText.value.length;
+                adjustTextareaHeight();
+                const hasContent = resultText.value.length > 0;
+                copyBtn.disabled = !hasContent;
+                clearBtn.disabled = !hasContent;
+                
+                // 显示编辑提示
+                if (hasContent) {
+                    editTip.classList.remove('hidden');
+                } else {
+                    editTip.classList.add('hidden');
+                }
+            });
+
+            // 窗口大小变化时重新调整布局
+            window.addEventListener('resize', () => {
+                adjustTextareaHeight();
+            });
+            
+            // 绑定前缀按钮事件
+            bindPrefixButtons();
+        }
+    </script>
+</body>
+</html>
